@@ -116,9 +116,10 @@ export default function Dashboard() {
     const handleDeviceUpdate = (payload) => {
       if (payload.device) {
         setDevices((prev) =>
-          prev.map((dev) =>
-            dev.name === payload.device ? { ...dev, current_state: payload.action } : dev
-          )
+          prev.map((dev) => {
+            if (togglingDevices[dev.name]) return dev;
+            return dev.name === payload.device ? { ...dev, current_state: payload.action } : dev;
+          })
         );
       }
     };
@@ -342,15 +343,47 @@ export default function Dashboard() {
                   </div>
 
                   {/* Red Toggle Switch matching Figma */}
-                  <label className="toggle-switch-figma" style={{ opacity: togglingDevices[dev.name] ? 0.6 : 1, cursor: togglingDevices[dev.name] ? 'not-allowed' : 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={isOn}
-                      disabled={!!togglingDevices[dev.name]}
-                      onChange={() => handleToggle(dev)}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isOn}
+                    disabled={!!togglingDevices[dev.name]}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleToggle(dev);
+                    }}
+                    style={{
+                      position: 'relative',
+                      width: '46px',
+                      height: '24px',
+                      borderRadius: '9999px',
+                      backgroundColor: isOn ? '#d32f2f' : '#e5e7eb',
+                      border: 'none',
+                      outline: 'none',
+                      cursor: togglingDevices[dev.name] ? 'not-allowed' : 'pointer',
+                      opacity: togglingDevices[dev.name] ? 0.6 : 1,
+                      transition: 'background-color 0.2s ease-in-out',
+                      padding: 0,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '2px',
+                        left: '2px',
+                        width: '20px',
+                        height: '20px',
+                        backgroundColor: 'white',
+                        borderRadius: '50%',
+                        transform: isOn ? 'translateX(22px)' : 'translateX(0px)',
+                        transition: 'transform 0.2s ease-in-out',
+                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.15)',
+                        pointerEvents: 'none',
+                      }}
                     />
-                    <span className="toggle-slider-figma" />
-                  </label>
+                  </button>
                 </div>
               );
             })}
