@@ -25,6 +25,7 @@ export default function Dashboard() {
   ]);
   const [toast, setToast] = useState(null);
   const [clock, setClock] = useState('');
+  const [togglingDevices, setTogglingDevices] = useState({});
 
   // 1. Đồng hồ thời gian thực
   useEffect(() => {
@@ -60,23 +61,25 @@ export default function Dashboard() {
         setChartPoints(chartRes.data);
       }
 
-      if (deviceRes.data) {
+      if (deviceRes.data && deviceRes.data.length > 0) {
         setDevices((prev) =>
           prev.map((dev) => {
-            const match = deviceRes.data.find((d) => d.name === dev.name);
+            const match = deviceRes.data.find((d) => d.name === dev.name || d.id === dev.id);
             return match ? { ...dev, current_state: match.current_state } : dev;
           })
         );
       }
     } catch (err) {
-      console.error('Lỗi tải dữ liệu dashboard:', err);
+      console.error('Lỗi nạp dữ liệu Dashboard:', err);
     }
   };
 
   useEffect(() => {
     loadData();
+  }, []);
 
-    // 3. Lắng nghe WebSocket
+  // 3. Realtime Socket.IO listener
+  useEffect(() => {
     const socket = getSocket();
 
     const handleSensorUpdate = (payload) => {
@@ -131,9 +134,12 @@ export default function Dashboard() {
     };
   }, []);
 
-  // 4. Bật tắt thiết bị
+  // 4. Bật tắt thiết bị có chống double click
   const handleToggle = async (device) => {
+    if (togglingDevices[device.name]) return;
+
     const nextState = device.current_state === 'ON' ? 'OFF' : 'ON';
+    setTogglingDevices((prev) => ({ ...prev, [device.name]: true }));
 
     // Cập nhật lạc quan
     setDevices((prev) =>
@@ -157,6 +163,8 @@ export default function Dashboard() {
         type: 'error',
         message: `Lỗi điều khiển thiết bị: ${err.message}`,
       });
+    } finally {
+      setTogglingDevices((prev) => ({ ...prev, [device.name]: false }));
     }
   };
 
@@ -334,10 +342,11 @@ export default function Dashboard() {
                   </div>
 
                   {/* Red Toggle Switch matching Figma */}
-                  <label className="toggle-switch-figma">
+                  <label className="toggle-switch-figma" style={{ opacity: togglingDevices[dev.name] ? 0.6 : 1, cursor: togglingDevices[dev.name] ? 'not-allowed' : 'pointer' }}>
                     <input
                       type="checkbox"
                       checked={isOn}
+                      disabled={!!togglingDevices[dev.name]}
                       onChange={() => handleToggle(dev)}
                     />
                     <span className="toggle-slider-figma" />

@@ -15,8 +15,8 @@ export default function DataSensor() {
   const [sortBy, setSortBy] = useState('time');
   const [order, setOrder] = useState('desc');
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const res = await getSensorData({
         page,
@@ -35,20 +35,20 @@ export default function DataSensor() {
     } catch (err) {
       console.error('Lỗi nạp dữ liệu cảm biến:', err);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData(false);
   }, [page, sortBy, order, timeSearch, sensorTypeFilter]);
 
-  // Realtime Socket.IO listener
+  // Realtime Socket.IO listener (Cập nhật ngầm mượt mà không nhấp nháy trang)
   useEffect(() => {
     const socket = getSocket();
     const handleRealtime = () => {
       if (page === 1 && !timeSearch) {
-        fetchData();
+        fetchData(true);
       }
     };
 

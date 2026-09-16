@@ -18,8 +18,8 @@ export default function ActionHistory() {
   const [sortBy, setSortBy] = useState('time');
   const [order, setOrder] = useState('desc');
 
-  const fetchHistory = async () => {
-    setLoading(true);
+  const fetchHistory = async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const res = await getActionHistory({
         page,
@@ -40,20 +40,20 @@ export default function ActionHistory() {
     } catch (err) {
       console.error('Lỗi nạp lịch sử:', err);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchHistory();
+    fetchHistory(false);
   }, [page, deviceFilter, actionFilter, statusFilter, sortBy, order, timeSearch]);
 
-  // Realtime Socket.IO listener
+  // Realtime Socket.IO listener (Cập nhật ngầm mượt mà không nhấp nháy trang)
   useEffect(() => {
     const socket = getSocket();
     const handleRealtime = () => {
       if (page === 1 && !timeSearch) {
-        fetchHistory();
+        fetchHistory(true);
       }
     };
 
